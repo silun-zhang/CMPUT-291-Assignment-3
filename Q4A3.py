@@ -131,9 +131,9 @@ def stacked_bar_chart(runtimes):
     ax.set_title('Optimized DB Query Runtimes')
     ax.legend()
     
-    path = './Q4A4.png'
+    path = './Q4A3chart.png'
     plt.savefig(path)
-    print('Chart saved to file Q4A4.png'.format(path))
+    print('Chart saved to file Q4A3chart.png'.format(path))
     
     # close figure so it doesn't display
     plt.close() 
