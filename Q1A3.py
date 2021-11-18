@@ -1,7 +1,6 @@
 # Q1A3.py
-
-import time
 import sqlite3
+import time
 
 # 
 class Db:
