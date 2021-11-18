@@ -176,16 +176,6 @@ class TaskQ1:
 			join Customers c on c.customer_id = o.customer_id 
 			where customer_postal_code=?;'''
 		return self.db.query(sql, postalcode)
-	
-	# Q3
-	#def queryOrdersAvgSize(self, postalcode):
-		#sql = f'''select count(*), avg(size) from (
-			#select o.order_id, count(i.order_item_id) size
-			#from Orders o
-			#join Customers c on c.customer_id=o.customer_id and c.customer_postal_code=?
-			#left join Order_items i on i.order_id=o.order_id
-			#group by o.order_id);'''
-		#return self.db.query(sql, postalcode)
 		
 	def __exec(self, dbName, scenario):
 		self.db.connect(dbName)
