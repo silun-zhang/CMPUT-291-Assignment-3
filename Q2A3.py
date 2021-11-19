@@ -1,12 +1,13 @@
 # Q2A3.py
 import sqlite3
 import time
+import matplotlib.pyplot as plt
 
-def query3(conn):
+def query2(conn):
     runtime = 0
     cursor = conn.cursor()
     cursor.execute('''CREATE VIEW OrderSize(oid, size) 
-                          AS SELECT order_id, COUNT(order_id)
+                          AS SELECT order_id, SUM(order_id)
                           FROM Order_items 
                           GROUP BY order_id;''')
     for i in range(50):
@@ -31,7 +32,7 @@ def query3(conn):
 
 def uninformed(conn):
     cursor = conn.cursor()
-    cursor.execute('PRAGMA foreign_keys=OFF;')
+    cursor.execute('PRAGMA foreign_keys=FALSE;')
     cursor.execute('PRAGMA automatic_index=FALSE;')
     conn.commit()
     cursor.execute("BEGIN TRANSACTION;")
@@ -57,14 +58,15 @@ def uninformed(conn):
     cursor.execute("CREATE TABLE Order_items (order_id TEXT, order_item_id INTEGER, product_id TEXT, seller_id TEXT);")
     cursor.execute("INSERT INTO Order_items SELECT * FROM Old_Order_items;")
     cursor.execute("DROP TABLE Old_Order_items")
-    conn.commit()    
+    conn.commit() 
+
 
 
     return
 
 def selfOptimized(conn):
     cursor = conn.cursor()
-    cursor.execute('PRAGMA foreign_keys=ON;')
+    cursor.execute('PRAGMA foreign_keys=TRUE;')
     cursor.execute('PRAGMA automatic_index=TRUE;')
     conn.commit()
     cursor.execute("BEGIN TRANSACTION;")
@@ -110,6 +112,44 @@ def dropIndex(conn):
 
     return
 
+def stacked_bar_chart(runtimes, query):
+    print(runtimes)
+    labels = ['SmallDB', 'MediumDB', 'LargeDB']
+    small_runtimes = []
+    medium_runtimes = []
+    large_runtimes = []
+    small_medium_runtimes = []
+    small_runtimes.append(runtimes[0])
+    small_runtimes.append(runtimes[3])
+    small_runtimes.append(runtimes[6])
+    medium_runtimes.append(runtimes[1])
+    medium_runtimes.append(runtimes[4])
+    medium_runtimes.append(runtimes[7])
+    large_runtimes.append(runtimes[2])
+    large_runtimes.append(runtimes[5])
+    large_runtimes.append(runtimes[8])
+    small_medium_runtimes.append((small_runtimes[0])+(medium_runtimes[0]))
+    small_medium_runtimes.append(small_runtimes[1]+medium_runtimes[1])
+    small_medium_runtimes.append(small_runtimes[2]+medium_runtimes[2])
+    width = 0.35       # the width of the bars: can also be len(x) sequence
+    
+    fig, ax = plt.subplots()
+    
+    ax.bar(labels, small_runtimes, width, label='Uninformed')
+    ax.bar(labels, medium_runtimes, width, bottom=small_runtimes, label='Self Optimized')
+    ax.bar(labels, large_runtimes, width, bottom=small_medium_runtimes, label='User Optimized')
+
+    ax.set_title('Optimized DB Query Runtimes')
+    ax.legend()
+    
+    path = './Q' + str(query) + 'A3chart.png'
+    plt.savefig(path)
+    print('Chart saved to file Q4A3chart.png'.format(path))
+    
+    # close figure so it doesn't display
+    plt.close() 
+    return
+
 def q2_main():
     dbs = ["A3Small.db", "A3Medium.db", "A3Large.db"]
     allRuntimes = []
@@ -117,7 +157,7 @@ def q2_main():
         # Uninformed query
         conn = sqlite3.connect('./Databases/' + db)
         uninformed(conn)
-        runtime = query3(conn)
+        runtime = query2(conn)
         allRuntimes.append(runtime)
         conn.commit()
         conn.close()
@@ -125,7 +165,7 @@ def q2_main():
         # Self-optimized query
         conn = sqlite3.connect('./Databases/' + db)
         selfOptimized(conn)
-        runtime = query3(conn)
+        runtime = query2(conn)
         allRuntimes.append(runtime)
         conn.commit()
         conn.close()
@@ -133,17 +173,16 @@ def q2_main():
         # User-optimized query
         conn = sqlite3.connect('./Databases/' + db)
         userOptimized(conn)
-        runtime = query3(conn)
+        runtime = query2(conn)
         dropIndex(conn)
         allRuntimes.append(runtime)
         conn.commit()
         conn.close()
         
     
-    return allRuntimes
+    stacked_bar_chart(allRuntimes, 2)
 
 
 
 if __name__ == "__main__":
-    runtimes = q2_main()
-    print(runtimes)
+    q2_main()
