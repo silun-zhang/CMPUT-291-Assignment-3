@@ -1,7 +1,6 @@
 # Q1A3.py
-import matplotlib.pyplot as plt
-import time
 import sqlite3
+import time
 
 # 
 class Db:
@@ -108,11 +107,9 @@ class Db:
 				self.conn.execute(sql)
 
 				sql = '''CREATE VIEW IF NOT EXISTS "OrderSize" AS
-					select oid, count(iid) size
-					from (
-						select o.order_id oid, i.order_item_id iid
-						from Orders o
-						left join Order_items i on o.order_id=i.order_id)
+					select o.order_id oid, count(i.order_item_id) size
+					from Orders o
+					left join Order_items i on o.order_id=i.order_id
 					group by oid;'''
 				self.conn.execute(sql)
 			except Exception as err:
@@ -157,6 +154,7 @@ class Db:
 			except Exception as err:
 				print(f'!!!Db@query({sql}):', err)
 
+
 		return result
 # end class
 
@@ -168,28 +166,31 @@ class TaskQ1:
 
 	def getPostalcodes(self, dbName, num):
 		self.db.connect(dbName)
-		sql = f'select distinct customer_postal_code from Customers order by random() limit {num};'
+		sql = f'''select distinct customer_postal_code
+			from Customers order by random() limit {num};'''
 		self.codes = self.db.query(sql)
 		self.db.close()
-
+	
+	# Q1
 	def queryOrdersCount(self, postalcode):
-		sql = f'''select * from Orders o join Customers c on c.customer_id = o.customer_id 
+		sql = f'''select o.order_id from Orders o
+			join Customers c on c.customer_id = o.customer_id 
 			where customer_postal_code=?;'''
 		return self.db.query(sql, postalcode)
-	
+		
 	def __exec(self, dbName, scenario):
 		self.db.connect(dbName)
 		self.db.setScenario(scenario)
 
 		start = time.time_ns()
 		for code in self.codes:
-			result = self.queryOrdersCount(code)
+			result = self.queryOrdersCount(code)   # Q1
 		end = time.time_ns()
 
 		self.db.close()
 
-		return (end - start) / len(self.codes) / 1000000  # ms
-
+		return 'Q1', dbName, scenario, (end - start) / len(self.codes) / 1000000  # ms
+	
 	# Result:
 	def getResult(self):
 		samplenum = 50
@@ -213,56 +214,7 @@ class TaskQ1:
 # end class
 
 #------------------------
-# Chart
-
-# Generate graph 1
-def graph_one():
-    q1 = TaskQ1()
-    stacked_bar_chart(q1.getResult(), 1)
-    return
-
-# Generates layered bar chart
-def stacked_bar_chart(runtimes, query):
-    labels = ['SmallDB', 'MediumDB', 'LargeDB']
-    small_runtimes = []
-    medium_runtimes = []
-    large_runtimes = []
-    small_medium_runtimes = []
-    small_runtimes.append(runtimes[0])
-    small_runtimes.append(runtimes[3])
-    small_runtimes.append(runtimes[6])
-    medium_runtimes.append(runtimes[1])
-    medium_runtimes.append(runtimes[4])
-    medium_runtimes.append(runtimes[7])
-    large_runtimes.append(runtimes[2])
-    large_runtimes.append(runtimes[5])
-    large_runtimes.append(runtimes[8])
-    small_medium_runtimes.append((small_runtimes[0])+(medium_runtimes[0]))
-    small_medium_runtimes.append(small_runtimes[1]+medium_runtimes[1])
-    small_medium_runtimes.append(small_runtimes[2]+medium_runtimes[2])
-    width = 0.35       # the width of the bars: can also be len(x) sequence
-    
-    fig, ax = plt.subplots()
-    
-    ax.bar(labels, small_runtimes, width, label='Uninformed')
-    ax.bar(labels, medium_runtimes, width, bottom=small_runtimes, label='Self Optimized')
-    ax.bar(labels, large_runtimes, width, bottom=small_medium_runtimes, label='User Optimized')
-
-    ax.set_title('Optimized DB Query Runtimes')
-    ax.legend()
-    
-    path = './Q' + str(query) + 'A3chart.png'
-    plt.savefig(path)
-    print('Chart saved to file Q4A3chart.png'.format(path))
-    
-    # close figure so it doesn't display
-    plt.close() 
-    return
-
-def main():
-	graph_one()
-	return
-
-if __name__ == "__main__":
-	main()
-
+q1 = TaskQ1()
+result = q1.getResult()
+for a in result:
+	print(a)

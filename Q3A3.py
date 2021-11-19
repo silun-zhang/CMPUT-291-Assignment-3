@@ -155,7 +155,7 @@ def q2_main():
     allRuntimes = []
     for db in dbs:
         # Uninformed query
-        conn = sqlite3.connect('./Databases/' + db)
+        conn = sqlite3.connect(db)
         uninformed(conn)
         runtime = query3(conn)
         allRuntimes.append(runtime)
@@ -163,7 +163,7 @@ def q2_main():
         conn.close()
 
         # Self-optimized query
-        conn = sqlite3.connect('./Databases/' + db)
+        conn = sqlite3.connect(db)
         selfOptimized(conn)
         runtime = query3(conn)
         allRuntimes.append(runtime)
@@ -171,7 +171,7 @@ def q2_main():
         conn.close()
 
         # User-optimized query
-        conn = sqlite3.connect('./Databases/' + db)
+        conn = sqlite3.connect(db)
         userOptimized(conn)
         runtime = query3(conn)
         dropIndex(conn)

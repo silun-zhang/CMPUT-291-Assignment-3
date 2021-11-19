@@ -34,33 +34,28 @@ def uninformed(conn):
     cursor = conn.cursor()
     cursor.execute('PRAGMA foreign_keys=FALSE;')
     cursor.execute('PRAGMA automatic_index=FALSE;')
-    conn.commit()
+
     cursor.execute("BEGIN TRANSACTION;")
     cursor.execute("ALTER TABLE Customers RENAME TO Old_Customers;")
     cursor.execute("CREATE TABLE Customers (customer_id TEXT, customer_postal_code INTEGER);")
-    cursor.execute("INSERT INTO Customers SELECT * FROM Old_Customers;")
+    cursor.execute("INSERT INTO Customers SELECT customer_id, customer_postal_code FROM Old_Customers;")
     cursor.execute("DROP TABLE Old_Customers")
-    conn.commit()
-    cursor.execute("BEGIN TRANSACTION;")
+
     cursor.execute("ALTER TABLE Sellers RENAME TO Old_Sellers;")
     cursor.execute("CREATE TABLE Sellers (seller_id TEXT, seller_postal_code INTEGER);")
-    cursor.execute("INSERT INTO Sellers SELECT * FROM Old_Sellers;")
+    cursor.execute("INSERT INTO Sellers SELECT seller_id, seller_postal_code FROM Old_Sellers;")
     cursor.execute("DROP TABLE Old_Sellers")
-    conn.commit()
-    cursor.execute("BEGIN TRANSACTION;")
+
     cursor.execute("ALTER TABLE Orders RENAME TO Old_Orders;")
     cursor.execute("CREATE TABLE Orders (order_id TEXT, customer_id TEXT);")
-    cursor.execute("INSERT INTO Orders SELECT * FROM Old_Orders;")
+    cursor.execute("INSERT INTO Orders SELECT order_id, customer_id FROM Old_Orders;")
     cursor.execute("DROP TABLE Old_Orders")
-    conn.commit()
-    cursor.execute("BEGIN TRANSACTION;")
+
     cursor.execute("ALTER TABLE Order_items RENAME TO Old_Order_items;")
     cursor.execute("CREATE TABLE Order_items (order_id TEXT, order_item_id INTEGER, product_id TEXT, seller_id TEXT);")
-    cursor.execute("INSERT INTO Order_items SELECT * FROM Old_Order_items;")
+    cursor.execute("INSERT INTO Order_items SELECT order_id, order_item_id, product_id, seller_id FROM Old_Order_items;")
     cursor.execute("DROP TABLE Old_Order_items")
     conn.commit() 
-
-
 
     return
 
@@ -68,29 +63,25 @@ def selfOptimized(conn):
     cursor = conn.cursor()
     cursor.execute('PRAGMA foreign_keys=TRUE;')
     cursor.execute('PRAGMA automatic_index=TRUE;')
-    conn.commit()
     cursor.execute("BEGIN TRANSACTION;")
     cursor.execute("ALTER TABLE Customers RENAME TO Old_Customers;")
-    cursor.execute("CREATE TABLE Customers (customer_id TEXT, customer_postal_code INTEGER, PRIMARY KEY(customer_id));")
-    cursor.execute("INSERT INTO Customers SELECT * FROM Old_Customers;")
+    cursor.execute('''CREATE TABLE Customers ("customer_id" TEXT, "customer_postal_code" INTEGER, PRIMARY KEY("customer_id"));''')
+    cursor.execute('''INSERT INTO Customers SELECT customer_id, customer_postal_code FROM Old_Customers;''')
     cursor.execute("DROP TABLE Old_Customers")
-    conn.commit() 
-    cursor.execute("BEGIN TRANSACTION;")
+    
     cursor.execute("ALTER TABLE Sellers RENAME TO Old_Sellers;")
     cursor.execute("CREATE TABLE Sellers (seller_id TEXT, seller_postal_code INTEGER, PRIMARY KEY(seller_id));")
-    cursor.execute("INSERT INTO Sellers SELECT * FROM Old_Sellers;")
+    cursor.execute("INSERT INTO Sellers SELECT seller_id, seller_postal_code FROM Old_Sellers;")
     cursor.execute("DROP TABLE Old_Sellers")
-    conn.commit()
-    cursor.execute("BEGIN TRANSACTION;")
+    
     cursor.execute("ALTER TABLE Orders RENAME TO Old_Orders;")
     cursor.execute("CREATE TABLE Orders (order_id TEXT, customer_id TEXT, FOREIGN KEY(customer_id) REFERENCES Customers(customer_id), PRIMARY KEY(order_id));")
-    cursor.execute("INSERT INTO Orders SELECT * FROM Old_Orders;")
+    cursor.execute("INSERT INTO Orders SELECT order_id, customer_id FROM Old_Orders;")
     cursor.execute("DROP TABLE Old_Orders")
-    conn.commit()      
-    cursor.execute("BEGIN TRANSACTION;")
+    
     cursor.execute("ALTER TABLE Order_items RENAME TO Old_Order_items;")
     cursor.execute("CREATE TABLE Order_items (order_id TEXT, order_item_id INTEGER, product_id TEXT, seller_id TEXT, PRIMARY KEY(order_id, order_item_id, product_id, seller_id), FOREIGN KEY(seller_id) REFERENCES Sellers(seller_id), FOREIGN KEY(order_id) REFERENCES Orders(order_id));")
-    cursor.execute("INSERT INTO Order_items SELECT * FROM Old_Order_items;")
+    cursor.execute("INSERT INTO Order_items SELECT order_id, order_item_id, product_id, seller_id FROM Old_Order_items;")
     cursor.execute("DROP TABLE Old_Order_items")
     conn.commit()
 
@@ -100,6 +91,7 @@ def userOptimized(conn):
     cursor = conn.cursor()
     cursor.execute('''CREATE INDEX Orders_customer_id_idx ON Orders (customer_id);''')
     cursor.execute('''CREATE INDEX Customer_id_idx ON Customers (customer_id);''')
+    cursor.execute('''CREATE INDEX Customer_postal_code_idx ON Customers (customer_postal_code);''')
     conn.commit()
 
     return
@@ -108,6 +100,7 @@ def dropIndex(conn):
     cursor = conn.cursor()
     cursor.execute('''DROP INDEX Orders_customer_id_idx;''')
     cursor.execute('''DROP INDEX Customer_id_idx;''')
+    cursor.execute('''DROP INDEX Customer_postal_code_idx;''')
     conn.commit()
 
     return
@@ -155,7 +148,7 @@ def q2_main():
     allRuntimes = []
     for db in dbs:
         # Uninformed query
-        conn = sqlite3.connect('./Databases/' + db)
+        conn = sqlite3.connect(db)
         uninformed(conn)
         runtime = query2(conn)
         allRuntimes.append(runtime)
@@ -163,7 +156,7 @@ def q2_main():
         conn.close()
 
         # Self-optimized query
-        conn = sqlite3.connect('./Databases/' + db)
+        conn = sqlite3.connect(db)
         selfOptimized(conn)
         runtime = query2(conn)
         allRuntimes.append(runtime)
@@ -171,7 +164,7 @@ def q2_main():
         conn.close()
 
         # User-optimized query
-        conn = sqlite3.connect('./Databases/' + db)
+        conn = sqlite3.connect(db)
         userOptimized(conn)
         runtime = query2(conn)
         dropIndex(conn)
