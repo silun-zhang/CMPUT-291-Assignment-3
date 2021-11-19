@@ -184,6 +184,11 @@ def user_optimized_q4(con):
     con.commit()     
     return
 
+def drop(con):
+    cur = con.cursor()
+    cur.execute('''DROP INDEX IF EXISTS idx_Order_items_order_id_seller_id;''')
+    con.commit()
+
 # Generates layered bar chart
 def stacked_bar_chart(runtimes,query):
     labels = ['SmallDB', 'MediumDB', 'LargeDB']
@@ -247,6 +252,7 @@ def main():
         con = connect(i)
         user_optimized_q4(con)
         runtime_list.append(query_q4(con))
+        drop(con)
         close(con)    
     stacked_bar_chart(runtime_list,4)
     return
