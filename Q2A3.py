@@ -27,7 +27,7 @@ def query2(conn):
                                                                      WHERE Customers.customer_postal_code = :random));''', {"random": random_customer})
         # Query2 end time
         end = time.time()
-        result = cursor.fetchall()
+
         runtime += (end - start)*1000
     # Drop the view we just created
     cursor.execute('''DROP VIEW OrderSize''')

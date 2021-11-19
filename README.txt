@@ -1,6 +1,6 @@
 Group Number: 52
-CCIDs: silun1
-Names: Si Lun Zhang,
+CCIDs: silun1, kwu
+Names: Si Lun Zhang, Kevin Wu
 
 We declare that we did not collaborate with anyone outside our own group in this assignment. 
 
