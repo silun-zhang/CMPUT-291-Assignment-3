@@ -240,28 +240,6 @@ def graph_q1():
 
 	return
 
-# Generate graph 3
-def graph_q3():
-	samplenum = 50
-
-	# Q3
-	samplesql = f'''select distinct customer_postal_code
-		from Customers order by random() limit {samplenum};'''
-
-	sql = f'''select count(*), avg(size) from (
-		select o.order_id, count(i.order_item_id) size
-		from Orders o
-		join Customers c on c.customer_id=o.customer_id and c.customer_postal_code=?
-		left join Order_items i on i.order_id=o.order_id
-		group by o.order_id);'''
-
-	q1 = TaskQ1(sql, samplesql)
-	r = q1.getResult()
-	# print(r)
-	stacked_bar_chart(r, 3)
-
-	return
-
 # Generates layered bar chart
 def stacked_bar_chart(runtimes, query):
 	labels = ['SmallDB', 'MediumDB', 'LargeDB']
