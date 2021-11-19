@@ -311,7 +311,6 @@ def stacked_bar_chart(runtimes, query):
 
 def main():
 	graph_q1()
-	
 	return
 
 if __name__ == "__main__":
