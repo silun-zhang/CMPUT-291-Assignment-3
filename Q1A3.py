@@ -1,6 +1,8 @@
 # Q1A3.py
-import sqlite3
+import matplotlib.pyplot as plt
+import numpy as np
 import time
+import sqlite3
 
 # 
 class Db:
@@ -51,6 +53,10 @@ class Db:
 				self.conn.execute(sql)
 				sql = '''DROP INDEX IF EXISTS "Sellers_zipcode";'''
 				self.conn.execute(sql)
+				sql = '''DROP INDEX IF EXISTS "Orderitems_orderitem";'''
+				self.conn.execute(sql)
+				sql = '''DROP INDEX IF EXISTS "Orderitems_seller";'''
+				self.conn.execute(sql)
 			elif (scenario == 'Self-optimized'):
 				sql = 'PRAGMA automatic_index=1;'
 				self.conn.execute(sql)
@@ -62,6 +68,10 @@ class Db:
 				self.conn.execute(sql)
 				sql = '''DROP INDEX IF EXISTS "Sellers_zipcode";'''
 				self.conn.execute(sql)
+				sql = '''DROP INDEX IF EXISTS "Orderitems_orderitem";'''
+				self.conn.execute(sql)
+				sql = '''DROP INDEX IF EXISTS "Orderitems_seller";'''
+				self.conn.execute(sql)
 			elif (scenario == 'User-optimized'):
 				sql = 'PRAGMA automatic_index=1;'
 				self.conn.execute(sql)
@@ -72,6 +82,10 @@ class Db:
 				sql = '''CREATE INDEX IF NOT EXISTS "Customers_zipcode" ON "Customers"("customer_postal_code");'''
 				self.conn.execute(sql)
 				sql = '''CREATE INDEX IF NOT EXISTS "Sellers_zipcode" ON "Sellers"("seller_postal_code");'''
+				self.conn.execute(sql)
+				sql = '''CREATE INDEX IF NOT EXISTS "Orderitems_orderitem" ON "Order_items"("order_id","order_item_id");'''
+				self.conn.execute(sql)
+				sql = '''CREATE INDEX IF NOT EXISTS "Orderitems_seller" ON "Order_items"("order_id","seller_id");'''
 				self.conn.execute(sql)
 		except Exception as err:
 			print(f'!!!Db@setScenario({scenario}):', err)
@@ -150,62 +164,53 @@ class Db:
   					cursor.execute(sql, args)
 				for row in cursor:
 					result.append(row)
-				cursor.close()   # cache clear
+				cursor.close()   # clear
 			except Exception as err:
 				print(f'!!!Db@query({sql}):', err)
-
 
 		return result
 # end class
 
 # 
 class TaskQ1:
-	def __init__(self):
+	def __init__(self, sql, samplesql):
 		self.db = Db()
 		self.codes = None
+		self.sql = sql
+		self.samplesql = samplesql
 
-	def getPostalcodes(self, dbName, num):
+	def getSampleCodes(self, dbName):
 		self.db.connect(dbName)
-		sql = f'''select distinct customer_postal_code
-			from Customers order by random() limit {num};'''
-		self.codes = self.db.query(sql)
+		self.codes = self.db.query(self.samplesql)
 		self.db.close()
 	
-	# Q1
-	def queryOrdersCount(self, postalcode):
-		sql = f'''select o.order_id from Orders o
-			join Customers c on c.customer_id = o.customer_id 
-			where customer_postal_code=?;'''
-		return self.db.query(sql, postalcode)
-		
 	def __exec(self, dbName, scenario):
 		self.db.connect(dbName)
 		self.db.setScenario(scenario)
 
 		start = time.time_ns()
 		for code in self.codes:
-			result = self.queryOrdersCount(code)   # Q1
+			result = self.db.query(self.sql, code)
 		end = time.time_ns()
 
 		self.db.close()
 
-		return 'Q1', dbName, scenario, (end - start) / len(self.codes) / 1000000  # ms
-	
+		return (end - start) / len(self.codes) / 1000000  # ms
+
 	# Result:
 	def getResult(self):
-		samplenum = 50
 		res = []
-		self.getPostalcodes('A3Small', samplenum)
+		self.getSampleCodes('A3Small')
 		res.append(self.__exec('A3Small', 'Uninformed'))
 		res.append(self.__exec('A3Small', 'Self-optimized'))
 		res.append(self.__exec('A3Small', 'User-optimized'))
 
-		self.getPostalcodes('A3Medium', samplenum)
+		self.getSampleCodes('A3Medium')
 		res.append(self.__exec('A3Medium', 'Uninformed'))
 		res.append(self.__exec('A3Medium', 'Self-optimized'))
 		res.append(self.__exec('A3Medium', 'User-optimized'))
 
-		self.getPostalcodes('A3Large', samplenum)
+		self.getSampleCodes('A3Large')
 		res.append(self.__exec('A3Large', 'Uninformed'))
 		res.append(self.__exec('A3Large', 'Self-optimized'))
 		res.append(self.__exec('A3Large', 'User-optimized'))
@@ -214,7 +219,100 @@ class TaskQ1:
 # end class
 
 #------------------------
-q1 = TaskQ1()
-result = q1.getResult()
-for a in result:
-	print(a)
+# Chart
+
+# Generate graph 1
+def graph_q1():
+	samplenum = 50
+
+	# Q1
+	samplesql = f'''select distinct customer_postal_code
+		from Customers order by random() limit {samplenum};'''
+
+	sql = f'''select o.order_id from Orders o
+		join Customers c on c.customer_id = o.customer_id 
+		where customer_postal_code=?;'''
+
+	q1 = TaskQ1(sql, samplesql)
+	r = q1.getResult()
+	# print(r)
+	stacked_bar_chart(r, 1)
+
+	return
+
+# Generate graph 3
+def graph_q3():
+	samplenum = 50
+
+	# Q3
+	samplesql = f'''select distinct customer_postal_code
+		from Customers order by random() limit {samplenum};'''
+
+	sql = f'''select count(*), avg(size) from (
+		select o.order_id, count(i.order_item_id) size
+		from Orders o
+		join Customers c on c.customer_id=o.customer_id and c.customer_postal_code=?
+		left join Order_items i on i.order_id=o.order_id
+		group by o.order_id);'''
+
+	q1 = TaskQ1(sql, samplesql)
+	r = q1.getResult()
+	# print(r)
+	stacked_bar_chart(r, 3)
+
+	return
+
+# Generates layered bar chart
+def stacked_bar_chart(runtimes, query):
+	labels = ['SmallDB', 'MediumDB', 'LargeDB']
+	small_runtimes = []
+	medium_runtimes = []
+	large_runtimes = []
+	small_medium_runtimes = []
+	small_runtimes.append(runtimes[0])
+	small_runtimes.append(runtimes[3])
+	small_runtimes.append(runtimes[6])
+	medium_runtimes.append(runtimes[1])
+	medium_runtimes.append(runtimes[4])
+	medium_runtimes.append(runtimes[7])
+	large_runtimes.append(runtimes[2])
+	large_runtimes.append(runtimes[5])
+	large_runtimes.append(runtimes[8])
+	small_medium_runtimes.append((small_runtimes[0])+(medium_runtimes[0]))
+	small_medium_runtimes.append(small_runtimes[1]+medium_runtimes[1])
+	small_medium_runtimes.append(small_runtimes[2]+medium_runtimes[2])
+	width = 0.25       # the width of the bars: can also be len(x) sequence
+
+	fig, ax = plt.subplots()
+
+	# ax.bar(labels, small_runtimes, width, label='Uninformed')
+	# ax.bar(labels, medium_runtimes, width*2/3, label='Self Optimized')
+	# ax.bar(labels, large_runtimes, width/3, label='User Optimized')
+	ax.bar(height=small_runtimes, width=width, label='Uninformed', x=np.arange(-width, 1.8))
+	ax.bar(height=medium_runtimes, width=width, label='Self Optimized', x=np.arange(0, 1.8+width))
+	ax.bar(height=large_runtimes, width=width, label='User Optimized',x=np.arange(width, 1.8+width*2))
+	ax.set_xticks([0,1,2])
+	ax.set_xticklabels(labels)
+	ax.yaxis.grid(linewidth=0.5, color="black", alpha=0.1)
+	ax.set_axisbelow(True)
+	plt.yscale('log')
+
+	ax.set_title(f'Optimized DB Query Q{query} Runtimes')
+	ax.legend()
+
+	path = './Q' + str(query) + 'A3chart.png'
+	plt.savefig(path)
+	print(f'Chart saved to file Q{query}A3chart.png')
+	#plt.show()
+
+	# close figure so it doesn't display
+	plt.close() 
+	return
+
+def main():
+	graph_q1()
+	
+	return
+
+if __name__ == "__main__":
+	main()
