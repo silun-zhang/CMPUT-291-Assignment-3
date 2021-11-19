@@ -8,7 +8,7 @@ def query3(conn):
     cursor = conn.cursor()
     cursor.execute('''DROP TABLE IF EXISTS OrderSize;''')
     cursor.execute('''CREATE TABLE OrderSize
-                      AS SELECT order_id AS oid, SUM(order_item_id) AS size
+                      AS SELECT order_id AS oid, COUNT(order_id) AS size
                       FROM Order_items 
                       GROUP BY order_id;''')
     for i in range(50):
@@ -20,9 +20,10 @@ def query3(conn):
         cursor.execute('''SELECT oid, AVG(size)
                           FROM OrderSize
                           WHERE oid IN (SELECT order_id
-                                        FROM Orders, Customers
-                                        WHERE Customers.customer_postal_code = :random
-                                        AND Orders.customer_id = Customers.customer_id);''', {"random": random_customer})
+                                        FROM Orders
+                                        WHERE Orders.customer_id IN (SELECT Customers.customer_id
+                                                                     FROM Customers
+                                                                     WHERE Customers.customer_postal_code = :random));''', {"random": random_customer})
         
         end = time.time()
         runtime += (end - start)*1000

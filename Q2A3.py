@@ -7,30 +7,38 @@ def query2(conn):
     runtime = 0
     cursor = conn.cursor()
     cursor.execute('''CREATE VIEW OrderSize(oid, size) 
-                          AS SELECT order_id, SUM(order_id)
+                          AS SELECT order_id, COUNT(order_id)
                           FROM Order_items 
                           GROUP BY order_id;''')
     for i in range(50):
+        # Selecting random customer_postal_code
         cursor.execute("SELECT customer_postal_code FROM Customers ORDER BY RANDOM() LIMIT 1;")
         random_customer = cursor.fetchall()
         random_customer = random_customer[0][0]
-        start = time.time()
 
-        cursor.execute('''SELECT oid, AVG(size)
+        # Query2 start time
+        start = time.time()
+        cursor.execute('''SELECT AVG(size)
                           FROM OrderSize
-                          WHERE oid IN (SELECT order_id
-                                        FROM Orders, Customers
-                                        WHERE Customers.customer_postal_code = :random
-                                        AND Orders.customer_id = Customers.customer_id);''', {"random": random_customer})
-        
+                          WHERE oid IN (SELECT Orders.order_id
+                                        FROM Orders
+                                        WHERE Orders.customer_id IN (SELECT Customers.customer_id
+                                                                     FROM Customers
+                                                                     WHERE Customers.customer_postal_code = :random));''', {"random": random_customer})
+        # Query2 end time
         end = time.time()
-        
+        result = cursor.fetchall()
+        print(result)
         runtime += (end - start)*1000
+    # Drop the view we just created
     cursor.execute('''DROP VIEW OrderSize''')
 
     return runtime
 
 def uninformed(conn):
+    '''
+    This function turns off foreign keys and automatic indexing and drops all primary keys
+    '''
     cursor = conn.cursor()
     cursor.execute('PRAGMA foreign_keys=FALSE;')
     cursor.execute('PRAGMA automatic_index=FALSE;')
@@ -60,6 +68,9 @@ def uninformed(conn):
     return
 
 def selfOptimized(conn):
+    '''
+    This function redfines our primary keys and foreign keys and turns on automatic indexing
+    '''
     cursor = conn.cursor()
     cursor.execute('PRAGMA foreign_keys=TRUE;')
     cursor.execute('PRAGMA automatic_index=TRUE;')
@@ -88,19 +99,24 @@ def selfOptimized(conn):
     return
 
 def userOptimized(conn):
+    '''
+    This function creates our own user defined indexes
+    '''
     cursor = conn.cursor()
     cursor.execute('''CREATE INDEX Orders_customer_id_idx ON Orders (customer_id);''')
-    cursor.execute('''CREATE INDEX Customer_id_idx ON Customers (customer_id);''')
-    cursor.execute('''CREATE INDEX Customer_postal_code_idx ON Customers (customer_postal_code);''')
+
     conn.commit()
 
     return
 
 def dropIndex(conn):
+    '''
+    This function drops our created indexes
+    '''
     cursor = conn.cursor()
     cursor.execute('''DROP INDEX Orders_customer_id_idx;''')
-    cursor.execute('''DROP INDEX Customer_id_idx;''')
-    cursor.execute('''DROP INDEX Customer_postal_code_idx;''')
+
+
     conn.commit()
 
     return
