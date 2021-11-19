@@ -152,6 +152,22 @@ class Db:
 				self.conn.commit()
 			except Exception as err:
 				print(f'!!!Db@insert({table},{row}):', err)
+	
+	def drop(self, scenario):
+		if self.connStatus == "connected":
+			if scenario == "User-optimized":
+				sql = '''DROP INDEX IF EXISTS "Orders_customerid";'''
+				self.conn.execute(sql)
+				sql = '''DROP INDEX IF EXISTS "Customers_zipcode";'''
+				self.conn.execute(sql)
+				sql = '''DROP INDEX IF EXISTS "Sellers_zipcode";'''
+				self.conn.execute(sql)
+				sql = '''DROP INDEX IF EXISTS "Orderitems_orderitem";'''
+				self.conn.execute(sql)
+				sql = '''DROP INDEX IF EXISTS "Orderitems_seller";'''
+				self.conn.execute(sql)
+
+
 
 	def query(self, sql, args = None):
 		result = []
@@ -187,12 +203,13 @@ class TaskQ1:
 	def __exec(self, dbName, scenario):
 		self.db.connect(dbName)
 		self.db.setScenario(scenario)
+		
 
 		start = time.time_ns()
 		for code in self.codes:
 			result = self.db.query(self.sql, code)
 		end = time.time_ns()
-
+		self.db.drop(scenario)
 		self.db.close()
 
 		return (end - start) / len(self.codes) / 1000000  # ms
