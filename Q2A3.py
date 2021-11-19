@@ -28,7 +28,6 @@ def query2(conn):
         # Query2 end time
         end = time.time()
         result = cursor.fetchall()
-        print(result)
         runtime += (end - start)*1000
     # Drop the view we just created
     cursor.execute('''DROP VIEW OrderSize''')
@@ -122,7 +121,6 @@ def dropIndex(conn):
     return
 
 def stacked_bar_chart(runtimes, query):
-    print(runtimes)
     labels = ['SmallDB', 'MediumDB', 'LargeDB']
     small_runtimes = []
     medium_runtimes = []
@@ -148,12 +146,12 @@ def stacked_bar_chart(runtimes, query):
     ax.bar(labels, medium_runtimes, width, bottom=small_runtimes, label='Self Optimized')
     ax.bar(labels, large_runtimes, width, bottom=small_medium_runtimes, label='User Optimized')
 
-    ax.set_title('Optimized DB Query Runtimes')
+    ax.set_title(f'Query {str(query)} (runtime in ms)')
     ax.legend()
     
     path = './Q' + str(query) + 'A3chart.png'
     plt.savefig(path)
-    print('Chart saved to file Q4A3chart.png'.format(path))
+    print('Chart saved to file Q2A3chart.png'.format(path))
     
     # close figure so it doesn't display
     plt.close() 

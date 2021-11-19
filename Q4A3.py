@@ -185,8 +185,7 @@ def user_optimized_q4(con):
     return
 
 # Generates layered bar chart
-def stacked_bar_chart(runtimes):
-    print(runtimes)
+def stacked_bar_chart(runtimes,query):
     labels = ['SmallDB', 'MediumDB', 'LargeDB']
     small_runtimes = []
     medium_runtimes = []
@@ -208,7 +207,7 @@ def stacked_bar_chart(runtimes):
     small_medium_runtimes.append((small_runtimes[0])+(medium_runtimes[0]))
     small_medium_runtimes.append(small_runtimes[1]+medium_runtimes[1])
     small_medium_runtimes.append(small_runtimes[2]+medium_runtimes[2])
-    width = 0.35       # the width of the bars: can also be len(x) sequence
+    width = 0.35
     
     fig, ax = plt.subplots()
     
@@ -219,13 +218,14 @@ def stacked_bar_chart(runtimes):
     # Top layer
     ax.bar(labels, large_runtimes, width, bottom=small_medium_runtimes, label='User Optimized')
 
-    ax.set_title('Query 4 (runtime in ms)')
+    query = str(query)
+    ax.set_title(f'Query {query} (runtime in ms)')
     ax.legend()
     
     # Saves results to a png file
-    path = './Q4A3chart.png'
+    path = f'./Q{query}A3chart.png'
     plt.savefig(path)
-    print('Chart saved to file Q4A3chart.png'.format(path))
+    print(f'Chart saved to file Q{query}A3chart.png'.format(path))
     
     # close figure so it doesn't display
     plt.close() 
@@ -248,7 +248,7 @@ def main():
         user_optimized_q4(con)
         runtime_list.append(query_q4(con))
         close(con)    
-    stacked_bar_chart(runtime_list)
+    stacked_bar_chart(runtime_list,4)
     return
         
 if __name__ == "__main__":

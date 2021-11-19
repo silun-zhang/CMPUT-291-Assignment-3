@@ -297,7 +297,7 @@ def stacked_bar_chart(runtimes, query):
 	ax.set_axisbelow(True)
 	plt.yscale('log')
 
-	ax.set_title(f'Optimized DB Query Q{query} Runtimes')
+	ax.set_title(f'Query {query} (runtime in ms)')
 	ax.legend()
 
 	path = './Q' + str(query) + 'A3chart.png'
