@@ -226,16 +226,16 @@ def graph_q1():
 	samplenum = 50
 
 	# Q1
-	samplesql = f'''select distinct customer_postal_code
-		from Customers order by random() limit {samplenum};'''
+	samplesql = f'''SELECT DISTINCT customer_postal_code
+		FROM Customers ORDER BY random() LIMIT {samplenum};'''
 
-	sql = f'''select o.order_id from Orders o
-		join Customers c on c.customer_id = o.customer_id 
-		where customer_postal_code=?;'''
+	sql = f'''SELECT o.order_id FROM Orders o
+		JOIN Customers c ON c.customer_id = o.customer_id 
+		WHERE customer_postal_code=?;'''
 
 	q1 = TaskQ1(sql, samplesql)
 	r = q1.getResult()
-	# print(r)
+
 	stacked_bar_chart(r, 1)
 
 	return
@@ -263,9 +263,6 @@ def stacked_bar_chart(runtimes, query):
 
 	fig, ax = plt.subplots()
 
-	# ax.bar(labels, small_runtimes, width, label='Uninformed')
-	# ax.bar(labels, medium_runtimes, width*2/3, label='Self Optimized')
-	# ax.bar(labels, large_runtimes, width/3, label='User Optimized')
 	ax.bar(height=small_runtimes, width=width, label='Uninformed', x=np.arange(-width, 1.8))
 	ax.bar(height=medium_runtimes, width=width, label='Self Optimized', x=np.arange(0, 1.8+width))
 	ax.bar(height=large_runtimes, width=width, label='User Optimized',x=np.arange(width, 1.8+width*2))
@@ -281,7 +278,6 @@ def stacked_bar_chart(runtimes, query):
 	path = './Q' + str(query) + 'A3chart.png'
 	plt.savefig(path)
 	print(f'Chart saved to file Q{query}A3chart.png')
-	#plt.show()
 
 	# close figure so it doesn't display
 	plt.close() 
