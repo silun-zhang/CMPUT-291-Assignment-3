@@ -1,15 +1,6 @@
 # A3Main.py
 import matplotlib.pyplot as plt
-from Q4A3 import *
-from Q2A3 import *
 
-# Generate graph 4
-def graph_four():
-    runtimes = q4_main()
-    stacked_bar_chart(runtimes, 4)
-    runtimes = q2_main()
-    stacked_bar_chart(runtimes, 2)
-    return
 
 # Generates layered bar chart
 def stacked_bar_chart(runtimes, query):
@@ -49,10 +40,3 @@ def stacked_bar_chart(runtimes, query):
     # close figure so it doesn't display
     plt.close() 
     return
-
-def main():
-    graph_four()
-    return
-
-if __name__ == "__main__":
-    main()
